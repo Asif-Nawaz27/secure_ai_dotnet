@@ -1,0 +1,12 @@
+title = "SecureAI.Dotnet gitleaks config"
+
+# Extend the default ruleset — we're not replacing it, only allowlisting known
+# false positives.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Synthetic secret-shaped fixtures used to test SecretShapedConfigurationGuard itself — not real credentials."
+paths = [
+  '''tests/ContosoHR\.Security\.Tests/SecretShapedConfigurationGuardTests\.cs''',
+]
