@@ -7,11 +7,8 @@ using ContosoHR.Api.Configuration;
 using ContosoHR.Api.ContentSafety;
 using ContosoHR.Api.DependencyInjection;
 using ContosoHR.Api.Observability;
-using ContosoHR.Api.Rendering;
-using ContosoHR.Assistant;
 using ContosoHR.Assistant.DependencyInjection;
 using ContosoHR.Assistant.Security;
-using ContosoHR.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.AI;
@@ -47,6 +44,7 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddControllers();
 
 // ---------------------------------------------------------------------------
 // AI pipeline: ContosoHR.Assistant's default (hardened) DI graph, plus this
@@ -157,101 +155,10 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy" })).AllowAnonymous();
-
-app.MapPost("/api/chat", async (
-    ChatRequest request,
-    ClaimsPrincipal caller,
-    IChatOrchestrator orchestrator,
-    ITokenBudgetStore tokenBudget,
-    IContentSafetyClassifier contentSafety,
-    IMarkdownRenderer markdownRenderer,
-    ILogger<Program> logger,
-    CancellationToken cancellationToken) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Message))
-    {
-        return Results.BadRequest(new { error = "message is required." });
-    }
-
-    if (request.Message.Length > RequestLimits.MaxUserMessageLength)
-    {
-        return Results.BadRequest(new { error = $"message exceeds the {RequestLimits.MaxUserMessageLength} character limit." });
-    }
-
-    var history = (request.History ?? []).Take(RequestLimits.MaxHistoryTurns).ToList();
-    var userId = caller.GetSubjectId();
-
-    var estimatedTokens = RequestLimits.EstimateTokens(request.Message, history.Count);
-    if (!tokenBudget.TryConsume(userId, estimatedTokens, out var remaining))
-    {
-        return Results.Json(new { error = "Monthly usage limit reached." }, statusCode: StatusCodes.Status429TooManyRequests);
-    }
-
-    var inputSafety = await contentSafety.ClassifyAsync(request.Message, cancellationToken);
-    if (!inputSafety.IsSafe)
-    {
-        return Results.Ok(new ChatResponseDto("I can't help with that request.", null));
-    }
-
-    try
-    {
-        var answer = await orchestrator.RespondAsync(
-            request.Message,
-            caller,
-            history.Select(h => new ChatTurn(h.Role, h.Text)).ToList(),
-            cancellationToken);
-
-        var outputSafety = await contentSafety.ClassifyAsync(answer.Text, cancellationToken);
-        var safeText = outputSafety.IsSafe
-            ? answer.Text
-            : "I found an answer but it didn't pass a safety check, so I'm not able to show it. Please rephrase your question.";
-
-        return Results.Ok(new ChatResponseDto(markdownRenderer.ToHtml(safeText), answer.PendingAction?.Id));
-    }
-    catch (Exception ex)
-    {
-        // R7: never leak provider error details or upstream quota state to the client.
-        logger.LogError(ex, "Chat request failed for user {UserId}", userId);
-        return Results.Json(new { error = "The assistant is temporarily unavailable. Please try again shortly." }, statusCode: StatusCodes.Status502BadGateway);
-    }
-})
-.RequireAuthorization()
-.RequireRateLimiting("chat");
-
-app.MapGet("/api/documents/search", (
-    string query,
-    ClaimsPrincipal caller,
-    IPolicyDocumentSearch documentSearch) =>
-{
-    var results = documentSearch.Search(query, caller);
-    return Results.Ok(results.Select(d => new { d.Id, d.FileName }));
-})
-.RequireAuthorization()
-.RequireRateLimiting("document-search");
-
-app.MapPost("/api/chat/confirm", async (
-    ConfirmRequest request,
-    ClaimsPrincipal caller,
-    IChatOrchestrator orchestrator,
-    IMarkdownRenderer markdownRenderer,
-    CancellationToken cancellationToken) =>
-{
-    var answer = await orchestrator.ConfirmPendingActionAsync(request.PendingActionId, caller, request.Approve, cancellationToken);
-    return Results.Ok(new ChatResponseDto(markdownRenderer.ToHtml(answer.Text), answer.PendingAction?.Id));
-})
-.RequireAuthorization()
-.RequireRateLimiting("chat");
+// All endpoints live in Controllers/ApiController.cs.
+app.MapControllers();
 
 app.Run();
-
-public sealed record ChatRequest(string Message, List<ChatTurnDto>? History);
-
-public sealed record ChatTurnDto(string Role, string Text);
-
-public sealed record ConfirmRequest(string PendingActionId, bool Approve);
-
-public sealed record ChatResponseDto(string Html, string? PendingActionId);
 
 // Exposed so WebApplicationFactory<Program> can find this host in integration tests.
 public partial class Program;
