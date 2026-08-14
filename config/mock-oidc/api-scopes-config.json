@@ -1,0 +1,7 @@
+[
+  {
+    "Name": "contoso-hr-assistant",
+    "DisplayName": "ContosoHR Assistant API",
+    "UserClaims": ["sub", "role", "name"]
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "ClientId": "contoso-hr-web",
+    "ClientSecrets": ["local-dev-only-not-a-real-secret"],
+    "Description": "ContosoHR.Api local/demo client — resource-owner password grant so scripts/redteam.sh and manual curl testing can act as a specific seeded employee.",
+    "AllowedGrantTypes": ["password"],
+    "AllowedScopes": ["openid", "profile", "contoso-hr-assistant"],
+    "AccessTokenType": "Jwt",
+    "RequireClientSecret": false,
+    "AccessTokenLifetime": 3600
+  }
+]

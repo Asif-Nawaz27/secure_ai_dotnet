@@ -1,0 +1,32 @@
+[
+  {
+    "SubjectId": "alice",
+    "Username": "alice",
+    "Password": "alice",
+    "Claims": [
+      { "Type": "sub", "Value": "alice" },
+      { "Type": "role", "Value": "Employee" },
+      { "Type": "name", "Value": "Alice Nguyen" }
+    ]
+  },
+  {
+    "SubjectId": "carol",
+    "Username": "carol",
+    "Password": "carol",
+    "Claims": [
+      { "Type": "sub", "Value": "carol" },
+      { "Type": "role", "Value": "Manager" },
+      { "Type": "name", "Value": "Carol Jimenez" }
+    ]
+  },
+  {
+    "SubjectId": "dana",
+    "Username": "dana",
+    "Password": "dana",
+    "Claims": [
+      { "Type": "sub", "Value": "dana" },
+      { "Type": "role", "Value": "HrAdmin" },
+      { "Type": "name", "Value": "Dana Okafor" }
+    ]
+  }
+]

