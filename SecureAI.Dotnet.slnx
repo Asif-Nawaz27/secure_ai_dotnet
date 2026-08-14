@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ContosoHR.Api/ContosoHR.Api.csproj" />
+    <Project Path="src/ContosoHR.Assistant.Security/ContosoHR.Assistant.Security.csproj" />
+    <Project Path="src/ContosoHR.Assistant/ContosoHR.Assistant.csproj" />
+    <Project Path="src/ContosoHR.Data/ContosoHR.Data.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ContosoHR.Integration.Tests/ContosoHR.Integration.Tests.csproj" />
+    <Project Path="tests/ContosoHR.Security.Tests/ContosoHR.Security.Tests.csproj" />
+  </Folder>
+</Solution>

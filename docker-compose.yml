@@ -1,0 +1,64 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Simulated Entra ID / OIDC provider for local dev. Issues tokens shaped like
+  # real Entra ID claims (sub, role) for the three seeded users (alice/carol/dana)
+  # configured in ./config/mock-oidc, so ContosoHR.Api's auth code (Program.cs's
+  # AddJwtBearer wiring) is the exact same code path production would use against
+  # a real tenant — only the authority/audience values change.
+  #
+  # ISSUER_URI is pinned to the host-exposed URL so the issuer claim in tokens
+  # matches regardless of whether a caller reaches this container via
+  # "mock-oidc:8080" (from inside the compose network, e.g. the api service) or
+  # "localhost:8080" (from the host, e.g. scripts/redteam.sh). If you change the
+  # host port mapping below, update ISSUER_URI to match.
+  mock-oidc:
+    image: ghcr.io/soluto/oidc-server-mock:latest
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ISSUER_URI: http://localhost:8080
+      SERVER_OPTIONS_INLINE: |
+        {
+          "AccessTokenJwtType": "JWT",
+          "Discovery": { "ShowKeySet": true },
+          "Authentication": { "CookieSameSiteMode": "Lax" }
+        }
+      CLIENTS_CONFIGURATION_PATH: /tmp/config/clients-config.json
+      USERS_CONFIGURATION_PATH: /tmp/config/users-config.json
+      API_SCOPES_PATH: /tmp/config/api-scopes-config.json
+    volumes:
+      - ./config/mock-oidc:/tmp/config:ro
+
+  api:
+    build:
+      context: .
+      dockerfile: src/ContosoHR.Api/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      QDRANT_URL: http://qdrant:6333
+      OIDC_AUTHORITY: http://mock-oidc:8080
+      OIDC_AUDIENCE: contoso-hr-assistant
+      USE_FAKE_CHAT_CLIENT: "true"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      mock-oidc:
+        condition: service_started
+
+volumes:
+  qdrant_storage:

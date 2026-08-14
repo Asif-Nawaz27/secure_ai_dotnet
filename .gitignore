@@ -1,0 +1,35 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+## Test results
+[Tt]est[Rr]esult*/
+*.trx
+coverage/
+*.coverage
+*.coveragexml
+
+## Rider / VS Code
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+## User secrets (never committed; local dev only)
+secrets.json
+
+## Env files with real values
+.env
+.env.local
+
+## Docker volumes / local data
+qdrant_storage/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Logs
+*.log
