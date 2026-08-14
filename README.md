@@ -1,8 +1,6 @@
 # SecureAI.Dotnet — ContosoHR.Assistant
 
-A reference ASP.NET Core solution demonstrating how to harden an LLM-powered feature
-(RAG + tool calling) against LLM-specific threats, built alongside the article
-[`article/securing-ai-features-in-dotnet.md`](article/securing-ai-features-in-dotnet.md).
+A reference ASP.NET Core application that demonstrates how to secure LLM features — prompt injection defenses, tool-call authorization, RAG access control, PII-safe telemetry, and cost limits — with each control backed by a passing attack test
 
 ## What this is
 
